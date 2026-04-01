@@ -1,8 +1,11 @@
 # AI Employee Silver
 
-> **Stack:** Claude AI + Python + Gmail API + LinkedIn API + Flask + MCP
+[![CI](https://github.com/goosa123/AI-Employee-Silver/actions/workflows/python-app.yml/badge.svg)](https://github.com/goosa123/AI-Employee-Silver/actions/workflows/python-app.yml)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Stack](https://img.shields.io/badge/AI-Claude%20%7C%20Python%20%7C%20Gmail%20%7C%20LinkedIn-blueviolet)](#tech-stack)
 
-An autonomous AI-powered business assistant that monitors Gmail and LinkedIn 24/7, drafts content with Claude AI, and executes tasks through a human-in-the-loop approval workflow — with scheduled posting support.
+> An autonomous AI-powered business assistant that monitors Gmail and LinkedIn 24/7, drafts content with Claude AI, and executes tasks through a human-in-the-loop approval workflow — with scheduled posting support.
 
 ---
 
@@ -47,7 +50,7 @@ An autonomous AI-powered business assistant that monitors Gmail and LinkedIn 24/
                │  Approve / Reject / Schedule for later
                ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                  SCHEDULING LAYER (NEW)                     │
+│                   SCHEDULING LAYER                          │
 │  vault/Scheduled/  ←  Approved posts with future time      │
 │  main_watcher checks every cycle:                          │
 │    scheduled_at <= now  →  move to Approved/  →  post      │
@@ -83,7 +86,7 @@ An autonomous AI-powered business assistant that monitors Gmail and LinkedIn 24/
 | AI Brain | Claude AI (Haiku for skills, Sonnet for tasks) |
 | Approval UI | Flask (local web interface — localhost:5050) |
 | Memory / GUI | Obsidian — local Markdown vault |
-| Watchers | Python 3.14 — Gmail + LinkedIn + Filesystem |
+| Watchers | Python 3.10+ — Gmail + LinkedIn + Filesystem |
 | Email | Gmail API (OAuth2) |
 | LinkedIn | LinkedIn API (OAuth2 — `w_member_social` scope) |
 | MCP Server | FastMCP (`mcp_server/server.py`) |
@@ -121,26 +124,16 @@ AI-Employee-Silver/
 │   └── setup_task_scheduler.ps1  # Windows Task Scheduler setup
 ├── utils/
 │   └── notifier.py           # Windows desktop notifications
-├── vault/
+├── vault/                    # Local data (gitignored)
 │   ├── Inbox/                # Drop tasks here
-│   ├── Drop/                 # Informal input
-│   ├── Needs_Action/         # Active work queue
 │   ├── Pending_Approval/     # Awaiting human review
-│   ├── Scheduled/            # Approved posts waiting for their scheduled time
-│   ├── Approved/             # Human-approved → AI executes immediately
-│   ├── Rejected/             # Declined outputs
+│   ├── Scheduled/            # Approved posts with future time
+│   ├── Approved/             # Ready to execute
 │   ├── Done/                 # Completed tasks
-│   ├── Archive/              # Original source files
-│   ├── Plans/                # Multi-step task plans
-│   ├── Dashboard/            # Live system dashboard
-│   ├── Logs/                 # Watcher logs
-│   ├── gmail/                # Gmail state (processed IDs, PID)
-│   └── linkedin/             # LinkedIn state (intake, drafts, PID)
+│   └── ...
 ├── credentials/              # OAuth tokens (gitignored)
-├── docs/
-│   └── WORKFLOW.md           # Vault workflow documentation
-├── vault/Company_Handbook.md # AI rules of engagement
-└── .env                      # API credentials (gitignored)
+├── .env                      # API credentials (gitignored)
+└── requirements.txt
 ```
 
 ---
@@ -149,7 +142,7 @@ AI-Employee-Silver/
 
 ### 1. Install dependencies
 ```bash
-pip install google-auth google-auth-oauthlib google-api-python-client requests python-dotenv winotify flask
+pip install -r requirements.txt
 ```
 
 ### 2. Gmail OAuth
@@ -177,11 +170,11 @@ powershell -File scripts/setup_task_scheduler.ps1
 ```
 
 ### 5. Open vault in Obsidian
-Open `vault/` folder in Obsidian. Pin `Dashboard/dashboard.md` for live status.
+Open the `vault/` folder in Obsidian. Pin `Dashboard/dashboard.md` for live system status.
 
 ---
 
-## How to Use
+## Usage
 
 ### Start all watchers
 ```bash
@@ -191,11 +184,11 @@ python watchers/launcher.py
 ### Open Approval UI
 ```bash
 python scripts/approval_ui.py
+# Opens at http://localhost:5050
 ```
-Opens automatically at `http://localhost:5050`
 
 ### Submit a task
-Drop any `.md` or `.txt` file into `vault/Inbox/` — watcher picks it up in seconds.
+Drop any `.md` or `.txt` file into `vault/Inbox/` — the watcher picks it up within seconds.
 
 ### LinkedIn post (immediate)
 Create a brief in `vault/linkedin/intake/`:
@@ -215,25 +208,19 @@ Add `scheduled_at` to your brief:
 ```json
 {
   "topic": "...",
-  "scheduled_at": "09:00"
-}
-```
-Or specify a date:
-```json
-{
   "scheduled_at": "2026-04-03 09:00"
 }
 ```
 Approve in UI → post goes to `vault/Scheduled/` → watcher auto-posts at exact time.
 
-### Approval UI workflow
+### Approval UI actions
 | Action | Result |
 |---|---|
-| Approve (no time) | Goes to `Scheduled/` — use "Post Now" to send immediately |
-| Approve + time | Goes to `Scheduled/` with scheduled time — auto-posts at that time |
-| Reject | Goes to `Rejected/` — no action taken |
-| Post Now (from Scheduled) | Moved to `Approved/` — posted in next watcher cycle |
-| Cancel (from Scheduled) | Moved to `Rejected/` |
+| Approve | Moves to `Approved/` — executes in next watcher cycle |
+| Approve + time | Moves to `Scheduled/` — auto-posts at that time |
+| Reject | Moves to `Rejected/` — no action taken |
+| Post Now | Immediate execution from `Scheduled/` |
+| Cancel | Moves to `Rejected/` |
 
 ---
 
@@ -251,34 +238,25 @@ Inbox/ or Drop/
 
 ---
 
-## Scheduled Post Filename Format
-
-Files in `vault/Scheduled/` are named for easy identification:
-```
-{source}_{YYYY-MM-DD}_{HH-MM}_{topic_slug}.json
-
-Example:
-linkedin_2026-04-02_09-00_ai_automation_business.json
-```
-
----
-
 ## Key Design Decisions
 
 **Why file-based workflow?**
 Every action leaves a file trail. Nothing happens silently. Full audit log always available in `vault/Archive/` and `vault/Logs/`.
 
-**Why a web Approval UI instead of file moves?**
-Moving files manually in Obsidian was error-prone. The Flask UI at `localhost:5050` gives a clean approve/reject/schedule interface with one click.
-
-**Why a Scheduled folder?**
-Separates "approved but waiting" from "approved and ready now". Watcher checks scheduled_at every cycle — no cron jobs, no external schedulers needed.
-
 **Why human-in-the-loop for LinkedIn?**
 Zero auto-posting policy. Brand reputation requires owner review before anything goes public.
+
+**Why a Scheduled folder?**
+Separates "approved but waiting" from "approved and ready now". Watcher checks `scheduled_at` every cycle — no cron jobs, no external schedulers needed.
 
 **Why PID lock files?**
 Prevents duplicate watchers even if VS Code, Task Scheduler, or manual runs overlap.
 
 **Why Claude Haiku for skills?**
 Fast, cheap, deterministic for classification and drafting. Sonnet reserved for complex multi-step reasoning tasks.
+
+---
+
+## License
+
+[MIT](LICENSE)
