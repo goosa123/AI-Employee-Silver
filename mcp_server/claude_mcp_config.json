@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "ai-employee-silver": {
+      "command": "C:\\Users\\ASUS\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+      "args": [
+        "C:\\Users\\ASUS\\Claude Projects\\AI-Employee-Silver\\mcp_server\\server.py"
+      ]
+    }
+  }
+}

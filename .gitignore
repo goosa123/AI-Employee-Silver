@@ -1,0 +1,40 @@
+# Environment
+.env
+*.env
+
+# Credentials
+credentials/
+*.json.bak
+
+# Vault (personal data)
+vault/Inbox/
+vault/Drop/
+vault/Archive/
+vault/Done/
+vault/Pending_Approval/
+vault/Approved/
+vault/Rejected/
+vault/Scheduled/
+vault/Needs_Action/
+vault/Plans/
+vault/Logs/
+vault/gmail/
+vault/linkedin/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+
+# Lock files
+*.lock
+*.pid
+
+# VS Code
+.vscode/
+
+# Misc
+*.tmp
+*.log
